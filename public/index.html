@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Estética Pro</title>
+    
+    <script>
+        if (!localStorage.getItem('usuarioLogado')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0d9488; --dark: #111827; --gray: #6b7280; --bg: #f3f4f6; --danger: #ef4444; --success: #22c55e; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+        
+        /* HEADER */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card-stat { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
+        .card-stat h3 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--gray); }
+        .card-stat .valor { font-size: 1.8rem; font-weight: 700; }
+
+        /* LAYOUT */
+        .main-container { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        @media (max-width: 768px) { .main-container { grid-template-columns: 1fr; } }
+
+        .panel { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .panel h2 { margin-top: 0; font-size: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 15px; color: var(--primary); }
+
+        /* FORMULÁRIOS & INPUTS MELHORADOS */
+        label { display: block; margin: 12px 0 5px; font-size: 0.85rem; color: var(--gray); font-weight: 600; }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; /* Mais espaço interno */
+            border: 1px solid #d1d5db; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 0.95rem; 
+            font-family: 'Inter', sans-serif;
+            background-color: #fff;
+            transition: border 0.2s;
+        }
+        
+        /* ESTILO DO CAMPO DE DATA ESPECÍFICO */
+        input[type="datetime-local"] {
+            color: var(--dark);
+            cursor: pointer;
+            background-image: none; /* Remove estilo nativo feio */
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+
+        /* BOTÕES PRINCIPAIS */
+        button.btn-primary { width: 100%; padding: 12px; margin-top: 20px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button.btn-primary:hover { background-color: #0f766e; }
+        .btn-sair { background: #374151; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.9rem; cursor: pointer; }
+
+        /* LISTAS */
+        .lista-item { padding: 12px 0; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* BOTÕES DE AÇÃO PEQUENOS */
+        .actions { display: flex; gap: 5px; }
+        .btn-action { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: transform 0.1s; }
+        .btn-action:hover { transform: scale(1.1); }
+        .btn-check { background-color: #dcfce7; color: #166534; }
+        .btn-cancel { background-color: #fee2e2; color: #991b1b; }
+        .btn-note { background-color: #e0f2fe; color: #075985; }
+
+        /* BOTÃO DE LIXEIRA PEQUENO */
+        .btn-trash {
+            width: 28px;
+            height: 28px;
+            background-color: transparent;
+            color: #ef4444; /* Vermelho */
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .btn-trash:hover {
+            background-color: #fee2e2;
+            border-color: #fca5a5;
+        }
+
+        /* MODAL */
+        dialog { border: none; border-radius: 12px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 450px; }
+        dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 style="margin:0; font-size:1.5rem; color:var(--dark)">✨ Clínica <span style="color:var(--primary)">Manager</span></h1>
+        <button onclick="sair()" class="btn-sair">Sair</button>
+    </header>
+    
+    <div class="dashboard-grid">
+        <div class="card-stat"><h3>Total Vendido</h3><div class="valor" id="statTotal">R$ 0,00</div></div>
+        <div class="card-stat" style="border-color: #166534;"><h3>Pix</h3><div class="valor" id="statPix">R$ 0,00</div></div>
+        <div class="card-stat" style="border-color: #3730a3;"><h3>Consórcio</h3><div class="valor" id="statConsorcio">R$ 0,00</div></div>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="column">
+            <div class="panel">
+                <h2>📅 Novo Agendamento</h2>
+                <form id="formAgendamento">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label>Cliente</label>
+                            <input type="text" id="cliente" required placeholder="Nome completo">
+                        </div>
+                        <div>
+                            <label>Profissional</label>
+                            <select id="selProfissional" required><option>Carregando...</option></select>
+                        </div>
+                    </div>
+
+                    <label>Procedimento</label>
+                    <input type="text" id="procedimento" placeholder="Ex: Aplicação de Botox">
+
+                    <div style="background:#f8fafc; padding:15px; border-radius:8px; margin-top:15px; border:1px solid #e2e8f0;">
+                        <label style="margin-top:0; color:#475569;">Consumir Material (Opcional)</label>
+                        <div style="display:flex; gap:10px;">
+                            <select id="selProduto"><option value="">Nenhum</option></select>
+                            <input type="number" id="qtdUsada" placeholder="Qtd" value="0" style="width:100px">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label>Valor (R$)</label>
+                            <input type="number" id="valor" step="0.01" required placeholder="0,00">
+                        </div>
+                        <div>
+                            <label>Pagamento</label>
+                            <select id="pagamento">
+                                <option value="Pix">Pix</option>
+                                <option value="Cartao">Cartão de Crédito</option>
+                                <option value="Consorcio">Consórcio</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <label>Data e Horário</label>
+                    <input type="datetime-local" id="data" required>
+                    
+                    <button type="submit" class="btn-primary">Confirmar Agendamento</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Próximos Clientes</h2>
+                <div id="listaAgendamentos">Carregando...</div>
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="panel">
+                <h2>📦 Estoque</h2>
+                <form id="formEstoque">
+                    <label>Adicionar Produto</label>
+                    <input type="text" id="prodNome" placeholder="Nome do Produto" required>
+                    <div style="display: flex; gap: 10px; margin-top:10px;">
+                        <input type="number" id="prodQtd" placeholder="Qtd" required>
+                        <select id="prodUn">
+                            <option value="unidades">UI</option>
+                            <option value="ml">ml</option>
+                            <option value="cx">cx</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary" style="background-color:#334155; margin-top:10px;">Lançar</button>
+                </form>
+                <div id="listaEstoque" style="margin-top:20px; max-height:300px; overflow-y:auto;"></div>
+            </div>
+
+            <div class="panel">
+                <h2>👩‍⚕️ Equipe</h2>
+                <div style="display:flex; gap:5px; align-items:flex-end; margin-bottom:10px;">
+                    <input type="text" id="nomeProfissional" placeholder="Novo nome...">
+                    <button onclick="addProf()" class="btn-primary" style="width:auto; margin:0; padding:12px;">+</button>
+                </div>
+                <div id="listaProfissionaisVisual" style="border-top:1px solid #eee; padding-top:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <dialog id="modalAnamnese">
+        <h3 id="tituloAnamnese" style="margin-top:0; color:var(--primary)">Ficha do Cliente</h3>
+        <div id="historicoNotas" style="height:200px; overflow-y:auto; background:#f8fafc; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #e2e8f0;"></div>
+        <textarea id="textoNota" rows="3" placeholder="Escreva aqui..."></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px; justify-content: flex-end;">
+            <button onclick="document.getElementById('modalAnamnese').close()" style="background:#eee; color:#333; border:none; padding:10px 20px; border-radius:6px; cursor:pointer">Cancelar</button>
+            <button onclick="salvarNota()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer">Salvar</button>
+        </div>
+    </dialog>
+
+<script>
+    function sair() { localStorage.removeItem('usuarioLogado'); window.location.href = 'login.html'; }
+    let clienteAtualAnamnese = '';
+
+    async function carregarDados() {
+        // 1. Profissionais
+        const profs = await fetch('/api/profissionais').then(r => r.json());
+        document.getElementById('selProfissional').innerHTML = profs.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+        
+        const divProfs = document.getElementById('listaProfissionaisVisual');
+        divProfs.innerHTML = profs.map(p => `
+            <div class="lista-item" style="padding:8px 0;">
+                <span>${p.nome}</span>
+                <button class="btn-trash" onclick="excluirItem('profissionais', ${p.id})" title="Excluir">🗑️</button>
+            </div>
+        `).join('');
+
+        // 2. Estoque
+        const estoque = await fetch('/api/estoque').then(r => r.json());
+        document.getElementById('listaEstoque').innerHTML = estoque.map(e => `
+            <div class="lista-item">
+                <div>
+                    <div style="font-weight:600">${e.produto}</div>
+                    <span style="background:#f1f5f9; padding:2px 8px; border-radius:12px; font-size:0.75rem; color:#475569">${e.quantidade} ${e.unidade}</span>
+                </div>
+                <button class="btn-trash" onclick="excluirItem('estoque', ${e.id})">🗑️</button>
+            </div>
+        `).join('');
+        document.getElementById('selProduto').innerHTML = '<option value="">Nenhum</option>' + estoque.map(e => `<option value="${e.id}">${e.produto} (${e.quantidade})</option>`).join('');
+
+        // 3. Agendamentos
+        const agenda = await fetch('/api/agendamentos').then(r => r.json());
+        const listaDiv = document.getElementById('listaAgendamentos');
+        if(agenda.length === 0) listaDiv.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:30px;">Sem agendamentos hoje.</p>';
+        else listaDiv.innerHTML = agenda.map(a => `
+            <div class="lista-item">
+                <div>
+                    <div style="font-weight:bold; color:var(--dark); font-size:1.05rem;">${a.cliente}</div>
+                    <small style="color:var(--gray); display:block; margin-top:2px;">${new Date(a.data_hora).toLocaleString('pt-BR', {weekday:'short', hour:'2-digit', minute:'2-digit'})} • ${a.procedimento}</small>
+                </div>
+                <div class="actions">
+                    <button class="btn-action btn-note" onclick="abrirAnamnese('${a.cliente}')" title="Ficha">📝</button>
+                    <button class="btn-action btn-check" onclick="mudarStatus(${a.id}, 'Concluido')" title="Concluir">✅</button>
+                    <button class="btn-action btn-cancel" onclick="mudarStatus(${a.id}, 'Cancelado')" title="Cancelar">❌</button>
+                </div>
+            </div>
+        `).join('');
+
+        // 4. Financeiro
+        const financeiro = await fetch('/api/resumo_financeiro').then(r => r.json());
+        let total = 0, pix = 0, cons = 0;
+        financeiro.forEach(f => {
+            total += f.total;
+            if(f.forma_pagamento === 'Pix') pix += f.total;
+            if(f.forma_pagamento === 'Consorcio') cons += f.total;
+        });
+        document.getElementById('statTotal').innerText = `R$ ${total.toFixed(2)}`;
+        document.getElementById('statPix').innerText = `R$ ${pix.toFixed(2)}`;
+        document.getElementById('statConsorcio').innerText = `R$ ${cons.toFixed(2)}`;
+    }
+
+    async function excluirItem(tipo, id) {
+        if(!confirm("Tem certeza que deseja excluir?")) return;
+        await fetch(`/api/${tipo}/${id}`, { method: 'DELETE' });
+        carregarDados();
+    }
+
+    async function mudarStatus(id, novoStatus) {
+        if(!confirm(`Marcar como ${novoStatus}?`)) return;
+        await fetch(`/api/agendamentos/${id}/status`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status: novoStatus }) });
+        carregarDados();
+    }
+
+    async function abrirAnamnese(nome) {
+        clienteAtualAnamnese = nome;
+        document.getElementById('tituloAnamnese').innerText = nome;
+        const notas = await fetch(`/api/anamnese/${nome}`).then(r => r.json());
+        document.getElementById('historicoNotas').innerHTML = notas.map(n => 
+            `<div style="border-bottom:1px solid #e2e8f0; padding:10px 0;">
+                <small style="color:#64748b; font-weight:bold;">${new Date(n.data_registro).toLocaleDateString()}</small>
+                <div style="margin-top:4px; color:#334155;">${n.texto}</div>
+             </div>`
+        ).join('') || '<div style="color:#94a3b8; text-align:center; padding-top:20px">Nenhuma anotação ainda.</div>';
+        document.getElementById('textoNota').value = '';
+        document.getElementById('modalAnamnese').showModal();
+    }
+
+    async function salvarNota() {
+        const texto = document.getElementById('textoNota').value;
+        if(!texto) return;
+        await fetch('/api/anamnese', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ cliente_nome: clienteAtualAnamnese, texto }) });
+        document.getElementById('modalAnamnese').close();
+        alert("Nota salva!");
+    }
+
+    async function addProf() {
+        const nome = document.getElementById('nomeProfissional').value;
+        if(!nome) return;
+        await fetch('/api/profissionais', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({nome})});
+        document.getElementById('nomeProfissional').value = '';
+        carregarDados();
+    }
+
+    document.getElementById('formAgendamento').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const dados = {
+            cliente: document.getElementById('cliente').value,
+            profissional_id: document.getElementById('selProfissional').value,
+            procedimento: document.getElementById('procedimento').value,
+            produto_id: document.getElementById('selProduto').value,
+            qtd_usada: document.getElementById('qtdUsada').value,
+            valor: document.getElementById('valor').value,
+            forma_pagamento: document.getElementById('pagamento').value,
+            data_hora: document.getElementById('data').value
+        };
+        await fetch('/api/agendar', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(dados)});
+        document.getElementById('formAgendamento').reset();
+        carregarDados();
+        alert("Agendado!");
+    });
+
+    document.getElementById('formEstoque').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await fetch('/api/estoque', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+            produto: document.getElementById('prodNome').value,
+            quantidade: document.getElementById('prodQtd').value,
+            unidade: document.getElementById('prodUn').value
+        })});
+        document.getElementById('formEstoque').reset();
+        carregarDados();
+    });
+
+    carregarDados();
+</script>
+</body>
+</html>
